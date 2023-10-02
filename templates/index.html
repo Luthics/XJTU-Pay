@@ -1,0 +1,538 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0042)https://pay.xjtu.edu.cn/ThirdWeb/CasQrcode -->
+<html xmlns="http://www.w3.org/1999/xhtml" style="overflow: auto;">
+
+<head id="Head1">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>
+        西安交通大学支付服务
+    </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--App自定义的mui css-->
+    <link href="./files/easyui.css" rel="stylesheet">
+    <link rel="stylesheet" href="./files/bootstrap.min.css">
+    <link rel="stylesheet" href="./files/style4.css">
+    <script type="text/javascript" src="./files/jquery-3.3.1.min.js.下载"></script>
+    <script type="text/javascript" src="./files/jquery.easyui.min.js.下载"></script>
+    <script type="text/javascript" src="./files/easyui-lang-zh_CN.js.下载"></script>
+    <script src="./files/chinesealert.js.下载" type="text/javascript"></script>
+    <script src="./files/common.js.下载" type="text/javascript"></script>
+    <script src="./files/Jquery.MaskLayer.js.下载" type="text/javascript"></script>
+    <script src="./files/jquery-powerFloat-min.js.下载" type="text/javascript"></script>
+    <script src="./files/jquery.qrcode.min.js.下载" type="text/javascript"></script>
+    <style type="text/css">
+        .obj {
+            outline: none;
+            line-height: 29px;
+            padding: 10px;
+            padding-bottom: 0;
+            height: 29px;
+            border-radius: 5px;
+        }
+
+        @-moz-document url-prefix() {
+            .obj {
+                outline: none;
+                line-height: 40px;
+                padding: 10px;
+                height: 40px;
+                width: 170px;
+            }
+        }
+
+        @media all and (-ms-high-contrast:none) {
+            .obj {
+                outline: none;
+                line-height: 29px;
+                padding: 10px;
+                padding-bottom: 0;
+                height: 29px;
+                width: 150px;
+            }
+        }
+    </style>
+    <script type="text/javascript" src="./files/JsBarcode.all.min.js.下载"></script>
+    <link rel="stylesheet" href="./files/animate.css">
+    <link rel="stylesheet" href="./files/global.css">
+    <link rel="stylesheet" href="./files/loading.css">
+    <script src="./files/loading.js.下载" type="text/javascript"></script>
+    <style type="text/css">
+        .je {
+            color: orange;
+        }
+    </style>
+    <script type="text/javascript">
+        var casUrl = "https://org.xjtu.edu.cn/openplatform/oauth/authorize?appId=1597&redirectUri=https://pay.xjtu.edu.cn/ThirdWeb/CasQrcode&responseType=code&scope=user_info&state=1234"
+        function JsonPost(url, postData, successFunc, errorFunc, async) {
+            $.ajax({
+                url: url,
+                data: postData,
+                type: 'post',
+                async: async,
+                dataType: 'json',
+                contentType: 'application/json',
+                headers: {
+                    Authorization: sessionStorage.Authorization,
+                },
+                success: function (data) {
+                    if (data) {
+                        if (data.Obj2) {
+                            window.location.href = casUrl;
+                        } else {
+                            successFunc(data);
+                        }
+                    }
+                }
+                , error:
+                    function (xhr) {
+                        if (xhr) {
+                            if (errorFunc) {
+                                errorFunc(xhr);
+                            }
+                        }
+                    }
+            });
+        }
+        function Post(url, postData, successFunc, errorFunc) {
+            $.ajax({
+                url: url,
+                data: postData,
+                type: 'post',
+                async: false,
+                dataType: 'json',
+                headers: {
+                    Authorization: sessionStorage.Authorization,
+                },
+                success: function (data) {
+                    if (data) {
+                        if (data.Obj2) {
+                            window.location.href = casUrl;
+                        } else {
+                            successFunc(data);
+                        }
+                    }
+                }
+                , error: function (xhr) {
+                    if (xhr) {
+                        if (errorFunc) {
+                            errorFunc(xhr);
+                        }
+                    }
+                }
+            });
+        }
+        var acctype = "";//支付方式类型
+        var InterValObj; //timer变量，控制时间
+        var curCount = 60; //当前剩余秒数
+        var fullUrl = 'wss://pay.xjtu.edu.cn:443';//监听地址
+        var myScroll;
+        //选择支付方式
+        $(function () {
+            history.replaceState(null, "", window.location.pathname);
+            sessionStorage.Authorization = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAxIjoiMjAyMy0wOS0xMiAwMDo0OTo1OCIsInNubyI6IjIyMjYxMTQwMjgiLCJhY2NvdW50IjoiMjUxMDI0In0.BKqvtG85WTpzQVhj4IcQ-uTdMu-QFzM-Ny1gs36SSWk';
+            var push1 = [];
+            $.each(jQuery(".pay-box").find("dl"), function (m, n) {
+                var model = {};
+                model.text = $(this).find('.title').html();
+                model.src = $(this).find("img").attr("src");
+                model.value = jQuery(n).attr("tag");
+                model.desc = $(this).find('.dec').html();
+                push1.push(model);
+            });
+            if (push1.length == 1) {
+                document.getElementById("showUserPicker").innerHTML = "";
+            }
+            if (push1.length >= 1) {
+                acctype = push1[0].value;
+                $('#payWay').html('<img src="' +
+                    push1[0].src +
+                    '"/><div style="text-align: left; font-size:13px;"><div style="font-weight: 600;">' +
+                    push1[0].text +
+                    '</div><div>' +
+                    "" +
+                    '</div></div>');
+            }
+            $('.pay-box').find('em').first().removeClass('icon-uncheckbox').addClass('icon-checkbox');
+            //判断是否开启
+            if ('1' === "1") {
+                getVoucherList(0);
+                $('#changeVoucherWay').click(function () {
+                    getVoucherList(1);
+                });
+            } else {
+                $("#changeVoucherWay").hide();
+            }
+            $('.pay-box').find('dl').click(function () {
+                acctype = $(this).attr('tag');
+                $('.pay-box').children('dl').find('dd').children('em').removeClass('icon-checkbox').addClass('icon-uncheckbox');
+                $(this).children('dd').find('em').removeClass('icon-uncheckbox').addClass('icon-checkbox');
+                $('#payWay').html('<img src="' +
+                    $(this).find("img").attr("src") +
+                    '"/><div style="text-align: left; font-size:13px;"><div style="font-weight: 600;">' +
+                    $(this).find('.title').html() +
+                    '</div><div>' +
+                    $(this).find('.dec').html() +
+                    '</div></div>');
+                $('#paymethodshow').hide();
+                $('.shadeBg').hide();
+                getreqestbarcode();
+            });
+            $('.shadeBg').click(function () { closebox() });
+            $('#more').click(function () {
+                $('#paymethodshow').show();
+            });
+            $("#qrCodeIco").css("margin", ($("#code").height() - $("#qrCodeIco").height()) / 2);//控制Logo图标的位置
+            //点击查看一维码
+            $('.tx').click(function () {
+                $('#oneCode').show();
+                $('#tips').show();
+            });
+            $('#oneCode').click(function () {
+                $(this).hide();
+            });
+            //关闭提示
+            $('.btn_box').click(function () {
+                $('#tips').toggle();
+                return false;
+            });
+            //判断横屏和竖屏
+            var width = document.documentElement.clientWidth;
+            var height = document.documentElement.clientHeight;
+            if (width < height) {
+                //console.log(width + " " + height);
+                $print = $('#oneCode');
+                $print.width(height);
+                $print.height(width);
+                $print.css('top', (height - width) / 2);
+                $print.css('left', 0 - (height - width) / 2);
+                $print.css('transform', 'rotate(90deg)');
+                $print.css('transform-origin', '50% 50%');
+            }
+            if (1 <= 0) {
+                $("#changeWay").css("display", "none");
+                $("#cardIdDesc").html('');
+            } else {
+                if (push1.length > 1) {
+                    $("#cardIdDiv").css("display", "none");
+                    $('#changeWay').click(function () {
+                        $('#paymethodshow').show();
+                        $('.shadeBg').show();
+                    });
+                }
+            }
+            //生成二维码
+            createqrcode();
+            $('#codew').click(function () {
+                getreqestbarcode();
+            });
+        });
+        function voucherClick(t) {
+            if ($(t).find('dd').children('em').hasClass('icon-checkbox')) {
+                $(t).find('dd').children('em').removeClass('icon-checkbox').addClass('icon-uncheckbox');
+            } else {
+                $(t).find('dd').children('em').removeClass('icon-uncheckbox').addClass('icon-checkbox');
+            }
+        }
+        function getVoucherList(flag) {
+            Loading.show();
+            JsonPost(AjaxHandlerUrl + 'ThirdWeb/VoucherList', "", function (result) {
+                Loading.hide();
+                if (result.IsSucceed) {
+                    $(".voucher-box").html("");
+                    var voucherObj = JSON.parse(result.Obj);
+                    var list = voucherObj.obj;
+                    var html = "";
+                    for (var i = 0; i < list.length; i++) {
+                        html += '<dl tag="' + list[i].showCardId + '" onclick="voucherClick(this)">'
+                            + '<dt><img alt="" src="/phonepaymentimages/voucher.png" /></dt>'
+                            + '<dd class="f">'
+                            + '<div class="title"><span class="je" style="font-size: 25px;">' + list[i].tranamt / 100 + '</span><span style="font - size: 5px;"><span class="je">元</span>' + list[i].voucherName + '</span></div>'
+                            + '<div class="dec" style="color: #dbd3d3;">有效期至' + list[i].endDate + '</div>'
+                            + '</dd>';
+                        if (list[i].flag === "0") {
+                            html += '<dd><em class="icon-uncheckbox"></em></dd></dl>';
+                        } else {
+                            html += '<dd><em class="icon-checkbox"></em></dd></dl>';
+                        }
+                    }
+                    if (html === '') {
+                        $('#voucherState').html('暂无卡券');
+                    } else {
+                        $(".voucher-box").html(html);
+                        if (flag === 1) {
+                            $('#voucherShow').show();
+                            $('.shadeBg').show();
+                        }
+                    }
+                } else {
+                    $.messager.show({
+                        title: '提示',
+                        msg: result.Msg,
+                        showType: 'fade',
+                        style: {
+                            right: '',
+                            bottom: ''
+                        }
+                    });
+                }
+            }, true);
+        }
+        var oldCardIdArray = [];
+        function closebox() {
+            $('#paymethodshow').hide();
+            $('#voucherShow').hide();
+            $('.shadeBg').hide();
+            var push2 = [];
+            var cardIdArray = [];
+            $.each(jQuery(".voucher-box").find("dl"), function (m, n) {
+                if ($(this).find('dd').children('em').hasClass('icon-checkbox')) {
+                    var model = {};
+                    model.je = $(this).find('.je').html();
+                    push2.push(model);
+                    cardIdArray.push(jQuery(n).attr("tag"));
+                }
+            });
+            //没有变化则不处理
+            if (oldCardIdArray.toString() === cardIdArray.toString()) {
+                return;
+            }
+            Loading.show();
+            JsonPost(AjaxHandlerUrl + 'ThirdWeb/SetVoucher', JSON.stringify({ cardIds: cardIdArray }), function (result) {
+                if (result.IsSucceed) {
+                    var totle = 0;
+                    for (var i in push2) {
+                        totle += parseFloat(push2[i].je);
+                    }
+                    $('#voucherState').html('抵扣' + totle.toFixed(2) + '元');
+                } else {
+                    //选择项取消 
+                    $.each(jQuery(".voucher-box").find("dl"), function (m, n) {
+                        if ($(this).find('dd').children('em').hasClass('icon-checkbox')) {
+                            $(this).find('dd').children('em').removeClass('icon-checkbox').addClass('icon-uncheckbox');
+                        }
+                    });
+                    $('#voucherState').html('可选择');
+                }
+                oldCardIdArray = cardIdArray;
+                Loading.hide();
+            }, false);
+        }
+        function createqrcode() {
+            curCount = 60;
+            window.clearInterval(InterValObj); //停止计时器
+            InterValObj = window.setInterval(SetRemainTime, 1000); //启动计时器，1秒执行一次
+            var qrcode = $("#qrcode0").text();
+            msgSend(qrcode);
+            var qrkcode = "";
+            var j = 0;
+            for (var i = 1; i <= qrcode.length; i++) {
+                if (i % 4 == 0) {
+                    qrkcode += qrcode.substr(j * 4, 4) + " ";
+                    j++;
+                }
+            }
+            var options = {
+                width: 2,//较细处条形码的宽度
+                height: 70, //条形码的宽度，无高度直接设置项，由位数决定，可以通过CSS去调整，见下
+                //quite: 10,
+                format: "CODE128",
+                displayValue: false,//是否在条形码下方显示文字
+                margin: 2
+            };
+            if (qrcode != "" && qrcode.length == 20) {
+                qrkcode = qrcode.substr(0, 4) + "************ 查看数字";//数字隐藏
+            }
+            JsBarcode("#barcode", qrcode, options);
+            JsBarcode("#barcode1", qrcode, options);
+            $("#dvtext").text(qrcode);
+            $("#dvtext1").text(qrkcode);
+            var qrcodeobj = $("#code").empty().qrcode({
+                render: "table", //table方式  canvas
+                correctLevel: 0,//纠错等级    
+                text: qrcode//任意内容 
+            });
+        }
+        //获取支付码
+        function getreqestbarcode() {
+            Loading.show();
+            Post(AjaxHandlerUrl + 'ThirdWeb/GetBarCode', { acctype: acctype }, function (result) {
+                if (result.IsSucceed) {
+                    $.each(result.Obj, function (i, k) {
+                        $("#qrcode" + i).text(k);
+                    });
+                    createqrcode();
+                    Loading.hide();
+                } else {
+                    Loading.hide();
+                    $.messager.show({
+                        title: '提示',
+                        msg: result.Msg,
+                        showType: 'fade',
+                        style: {
+                            right: '',
+                            bottom: ''
+                        }
+                    });
+                }
+            });
+        }
+        //timer处理函数
+        function SetRemainTime() {
+            if (curCount == 0) {
+                getreqestbarcode();
+            }
+            else {
+                curCount--;
+            }
+        }
+        function msgSend(temp) {
+            try {
+                var ws = null;
+                if ("WebSocket" in window) {
+                    ws = new WebSocket(fullUrl);
+                } else if ("MozWebSocket" in window) {
+                    ws = new MozWebSocket(fullUrl);
+                } else {
+                    return false;
+                }
+                if (ws != null) {
+                    ws.onopen = function () { };
+                    ws.onclose = function () { };
+                    ws.onerror = function (event) { };
+                    ws.onmessage = function (msg) {
+                        $("#txtvalue").val(msg.data);
+                        $("#Authorization").val(sessionStorage.Authorization);
+                        $("#form1").submit();
+                    };
+                    delayExcute(temp, ws);
+                }
+            } catch (e) {
+            }
+        }
+        /*
+         *html发送二维码给服务端进行监听
+         */
+        function delayExcute(temp, ws) {
+            if (ws != null) {
+                window.setTimeout(function () {
+                    ws.send("(" + temp + ")");
+                }, 500);
+            }
+        }
+    </script>
+</head>
+
+<body class="sweep_bg" style="overflow: auto;">
+    <header>
+    </header>
+    <div class="pay-container">
+        <div class="tx">
+            <img id="barcode1" style="width: 294px;height:76px" src="data:image/png;base64,{{ bar_code_base }}">
+            <!-- flask -->
+            <div id="dvtext1" style="margin-top: 10px;">{{ pay_number }} 查看数字</div>
+        </div>
+        <div id="codew" style="margin-bottom: 50px;">
+            <div class="qr_code" style="width: 125px; height: 125px;" id="code">
+                <!-- flask -->
+                <img src="data:image/png;base64,{{ qrcode_base }}" alt="QRCODE">
+            </div>
+        </div>
+        <div class="bank_update" id="changeWay" style="height:40px">
+            <div id="payWay" class="bank"
+                style="display:flex;align-items:center;justify-content:center;line-height: normal; margin-left: 30px;">
+                <img src="./files/e_card.png">
+                <div style="text-align: left; font-size:13px;">
+                    <div style="font-weight: 600;">电子账户(电子钱包)</div>
+                    <div></div>
+                </div>
+            </div>
+            <a id="showUserPicker" type="button" style="margin-right: 30px;"></a>
+        </div>
+        <!--<div style="color:red;font-weight:800; margin:auto">请确保一卡通帐户余额足以支付本次消费</div>-->
+        <div class="bank_update" id="changeVoucherWay" style="height:40px">
+            <div id="voucherWay" class="bank"
+                style="display:flex;align-items:center;justify-content:center;line-height: normal; margin-left: 30px;">
+                <img alt="" style="width:20px; width: 1.25rem; height: 1.25rem;  margin-right: .4rem;"
+                    src="./files/vouchers.png">
+                <div style="text-align: left; font-size:13px;">
+                    <div style="font-weight: 600;">卡券</div>
+                    <div></div>
+                </div>
+            </div>
+            <a id="showVoucherPicker" type="button" style="margin-right: 30px;">
+                <span style="color:gray;" id="voucherState">暂无卡券</span>
+                <img alt="" style="height: 8px;" src="./files/Shape.png">
+            </a>
+        </div>
+    </div>
+    <div class="mui-content">
+        <div class="mui-content-padded"></div>
+    </div>
+    <!--选择支付方式-->
+    <div id="paymethodshow" class="popup">
+        <div class="caption-head border font-size-20 flex-box">
+            <div class="fit text-center">选择支付方式</div>
+        </div>
+        <div class="profile-box">
+            <div class="liushui-list payment-box pay-box">
+                <dl tag="000">
+                    <dt><img alt="" src="./files/e_card.png"></dt>
+                    <dd class="f">
+                        <div class="title">电子账户(电子钱包)</div>
+                        <div class="dec"></div>
+                    </dd>
+                    <dd><em class="icon-checkbox"></em></dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <!--选择卡券-->
+    <div id="voucherShow" class="popup">
+        <div class="caption-head border font-size-20 flex-box">
+            <button onclick="closebox()" class="btn01">
+                <em class="icon-close font-size-24">×</em>
+            </button>
+            <div class="fit text-center">选择卡券</div>
+        </div>
+        <div class="profile-box">
+            <div class="liushui-list payment-box voucher-box" style="height: 200px;overflow: auto;"></div>
+        </div>
+    </div>
+    <div class="shadeBg">
+    </div>
+    <div style="text-align:center;position: absolute;bottom: .2rem;width: 100%;">
+        <div id="ccTips" style="margin-bottom: 100px;">
+            暂不支持此服务
+        </div>
+    </div>
+    <div id="oneCode">
+        <div class="one">
+            <div id="dvtext">40021926542209175555</div>
+            <div class="oneimg">
+                <img id="barcode"
+                    src="data:image/png;base64,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">
+            </div>
+        </div>
+        <div class="tipsbox" id="tips">
+            <div class="tips-txt">
+                付款码数字仅用于付钱时向商家出示 为防诈骗，请不要发送给他人
+            </div>
+            <div class="btn_box mar_bot04 part-top01">
+                <button type="button" class="btn   font_20">我知道了</button>
+            </div>
+        </div>
+    </div>
+    <form action="https://pay.xjtu.edu.cn/ThirdWeb/OrderResult" id="form1" method="post">
+        <input type="hidden" name="txtvalue" id="txtvalue">
+        <input type="hidden" name="Authorization" id="Authorization">
+        <input type="hidden" id="appUrl" value="">
+        <inout type="hidden" id="appFlag" value="">
+            <inout type="hidden" id="isshowheader" value="">
+                <div style="display: none;" id="qrcode0">40021926542209175555</div>
+            </inout>
+        </inout>
+    </form>
+</body>
+
+</html>
